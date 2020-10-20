@@ -15,6 +15,8 @@ namespace App_tracker.Models
         {
         }
 
+        public virtual DbSet<Bays> Bays { get; set; }
+        public virtual DbSet<ContainerComments> ContainerComments { get; set; }
         public virtual DbSet<ContainerDepartments> ContainerDepartments { get; set; }
         public virtual DbSet<ContainerSuppliers> ContainerSuppliers { get; set; }
         public virtual DbSet<ContainerTypes> ContainerTypes { get; set; }
@@ -26,12 +28,36 @@ namespace App_tracker.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseSqlServer("Server=DESKTOP-9FIIT8Q\\SQLEXPRESS;Database=AppointmentTracker;Trusted_Connection=True;");
+                optionsBuilder.UseSqlServer("Data Source=DESKTOP-9FIIT8Q\\SQLEXPRESS;Database=AppointmentTracker;Trusted_Connection=True;MultipleActiveResultSets=true");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Bays>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Bay).HasColumnName("bay");
+            });
+
+            modelBuilder.Entity<ContainerComments>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Comment)
+                    .IsRequired()
+                    .HasColumnName("comment");
+
+                entity.Property(e => e.ContainerId).HasColumnName("containerId");
+
+                entity.HasOne(d => d.Container)
+                    .WithMany(p => p.ContainerComments)
+                    .HasForeignKey(d => d.ContainerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ContainerComments_ContainerId");
+            });
+
             modelBuilder.Entity<ContainerDepartments>(entity =>
             {
                 entity.Property(e => e.Id)
@@ -95,9 +121,15 @@ namespace App_tracker.Models
 
                 entity.Property(e => e.Bay).HasColumnName("bay");
 
+                entity.Property(e => e.BayId).HasColumnName("bayId");
+
                 entity.Property(e => e.CheckSheet).HasColumnName("checkSheet");
 
                 entity.Property(e => e.DepartmentId).HasColumnName("departmentId");
+
+                entity.Property(e => e.Door)
+                    .HasColumnName("door")
+                    .HasMaxLength(50);
 
                 entity.Property(e => e.ExpNumOfPallets).HasColumnName("expNumOfPallets");
 
@@ -113,6 +145,12 @@ namespace App_tracker.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.TypeId).HasColumnName("typeId");
+
+                entity.HasOne(d => d.BayNavigation)
+                    .WithMany(p => p.Containers)
+                    .HasForeignKey(d => d.BayId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("containers_bayId_FK");
 
                 entity.HasOne(d => d.Department)
                     .WithMany(p => p.Containers)

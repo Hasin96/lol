@@ -7,6 +7,7 @@ namespace App_tracker.Models
     {
         public Containers()
         {
+            ContainerComments = new HashSet<ContainerComments>();
             ContainerSuppliers = new HashSet<ContainerSuppliers>();
         }
 
@@ -24,9 +25,13 @@ namespace App_tracker.Models
         public int Bay { get; set; }
         public byte? DepartmentId { get; set; }
         public byte TypeId { get; set; }
+        public string Door { get; set; }
+        public int BayId { get; set; }
 
+        public virtual Bays BayNavigation { get; set; }
         public virtual ContainerDepartments Department { get; set; }
         public virtual ContainerTypes Type { get; set; }
+        public virtual ICollection<ContainerComments> ContainerComments { get; set; }
         public virtual ICollection<ContainerSuppliers> ContainerSuppliers { get; set; }
     }
 }

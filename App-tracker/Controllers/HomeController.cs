@@ -6,21 +6,30 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using App_tracker.ViewModels;
+using App_tracker.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace App_tracker.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private AppointmentTrackerContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, AppointmentTrackerContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var viewModel = new CreateContainerViewModel();
+            viewModel.ContainerTypes = await _context.ContainerTypes.Select(ct => new ContainerTypes { Id = ct.Id, Type = ct.Type }).ToListAsync();
+            viewModel.ContainerDepartments = await _context.ContainerDepartments.Select(cd => new ContainerDepartments { Id = cd.Id, Department = cd.Department }).ToListAsync();
+            viewModel.Bays = await _context.Bays.Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync();
+            return View(viewModel);
         }
 
         public IActionResult Privacy()

@@ -1,19 +1,128 @@
-﻿@{
+﻿@model App_tracker.ViewModels.CreateContainerViewModel
+@{
     ViewData["Title"] = "Home Page";
 }
 
 
-<h1 class="mt-5 custom-text-default custom-title">Log appointments</h1>
-<div class="container">
-    <form>
-        <div class="row">
-            <div class="col pl-0">
-                <h2 class="custom-sub-title">Expected information</h2>
-                <p class="custom-info">This information should be on the sheet that shows all of the deliveries for the day</p>
-            </div>
-            <div class="col-8">
+<style>
+    #appointment-form .btn {
+        cursor: pointer;
+    }
+</style>
 
+<h1 class="mt-5 custom-text-default custom-title">Log appointments</h1>
+<form asp-controller="Home" asp-action="Create" method="post" id="appointment-form">
+    <div class="row custom-row-seperator">
+        <div class="col-12 col-xl pl-0 mb-2">
+            <h2 class="custom-sub-title">Expected information</h2>
+            <p class="custom-info">This information should be on the sheet that shows all of the deliveries for the day</p>
+        </div>
+        <div class="pl-0 pl-md-0 pl-sm-0 pl-xs-0 pl-lg-0 col-12 col-xl-8">
+            <div class="form-group">
+                <label asp-for="RefNum">Reference / Appointment Number</label>
+                <input asp-for="RefNum" class="form-control">
+            </div>
+            <div class="form-group">
+                <label asp-for="Supplier">Supplier</label>
+                <input asp-for="Supplier" type="text" class="form-control">
+            </div>
+            <div class="form-group">
+                <label asp-for="ExpTimeOfArrival">Expected Arrival Time</label>
+                <input asp-for="ExpTimeOfArrival" class="form-control">
+            </div>
+            <div class="form-group">
+                <label asp-for="ExpNumOfPallets">Expected Number of Pallets</label>
+                <input asp-for="ExpNumOfPallets" class="form-control">
+            </div>
+            <div class="form-group">
+                <label asp-for="ExpNumOfUnits">Expected Number of Units</label>
+                <input asp-for="ExpNumOfUnits" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Container Type</label>
+                <div class="js-container-types">
+                    @foreach (var containerType in Model.ContainerTypes)
+                    {
+                        // Manually added an ID to create unique IDs to allow labels to focus the correct radio btn when clicked.
+                        <input asp-for="ContainerTypeId" class="form-check-input invisible" type="radio" value="@containerType.Id">
+                        <label class="form-check-label btn btn-light" value="@containerType.Id">@containerType.Type</label>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Container Departments</label>
+                <div class="js-container-departments">
+                    @foreach (var containerDepartments in Model.ContainerDepartments)
+                    {
+                        <input asp-for="ContainerDepartmentId" class="form-check-input invisible" type="radio" value="@containerDepartments.Id">
+                        <label class="form-check-label btn btn-light" asp-for="ContainerDepartmentId">@containerDepartments.Department</label>
+                    }
+                </div>
             </div>
         </div>
-    </form>
-</div>
+    </div>
+    <div class="row custom-row-seperator">
+        <div class="col-12 col-xl pl-0 mb-2">
+            <h2 class="custom-sub-title">Actual Information</h2>
+            <p class="custom-info">Some of this information will need to be filled out after everything has been received.</p>
+        </div>
+        <div class="pl-0 pl-md-0 pl-sm-0 pl-xs-0 pl-lg-0 col-12 col-xl-8">
+            <div class="form-group">
+                <label asp-for="ActTimeOfArrival">Actual Arrival Time</label>
+                <input asp-for="ActTimeOfArrival" type="text" class="form-control">
+            </div>
+            <div class="form-group">
+                <label asp-for="ActNumOfPallets">Actual Number of Pallets</label>
+                <input asp-for="ActNumOfPallets" type="text" class="form-control">
+            </div>
+            <div class="form-group">
+                <label asp-for="ActNumOfUnits">Actual Number of Units</label>
+                <input asp-for="ActNumOfUnits" type="text" class="form-control">
+            </div>
+            <div class="form-group">
+                <label asp-for="Bay">Bay</label>
+                <select asp-for="Bay" asp-items="@Model.Bays" class="form-control">
+                    <option>Select the bay that the container is being tipped on.</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label asp-for="Door">Door</label>
+                <input asp-for="Door" type="text" class="form-control">
+            </div>
+        </div>
+    </div>
+    <div class="row custom-row-seperator">
+        <div class="col-12 col-xl pl-0 mb-2">
+            <h2 class="custom-sub-title">Extra Information</h2>
+            <p class="custom-info">This can be giving a reason on why a PO number is over received or under received.</p>
+        </div>
+        <div class="pl-0 pl-md-0 pl-sm-0 pl-xs-0 pl-lg-0 col-12 col-xl-8">
+            <div class="form-group">
+                @*@foreach (var comment in Model.Comments)
+                    {
+                        <label>Comments</label>
+                        <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+                    }*@
+            </div>
+        </div>
+    </div>
+</form>
+@section Scripts
+{
+    <environment include="Development">
+
+        <script src="~/js/Views/Home/createAppointment.js"></script>
+        <script>
+            $(document).ready(function () {
+                create_appointment_module.init();
+            })
+        </script>
+    </environment>
+}
+
+@*<environment exclude="Development">
+        <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/css/bootstrap.min.css"
+              asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+              asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
+        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    </environment>*@
