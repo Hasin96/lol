@@ -1,24 +1,28 @@
 ﻿var create_appointment_module = (function () {
 
     //... Elements
-    var $form                = $("form");
-    var $cTypesBtns       = $form.find(".js-container-types").find(".btn");
+    var $form = $("form");
 
-    var $cDepartmentsWrapper = $form.find(".js-container-departments");
+    var $containerTypesWrapper = $form.find(".js-container-types");
+    var $containerTypesRadioBtns = $containerTypesWrapper.find("input[type=radio]");
+
+    var $containerDepartmentsWrapper = $form.find(".js-container-departments");
+    var $containerDepartmentsRadioBtns = $containerDepartmentsWrapper.find("input[type=radio]");
 
     var init = function () {
-        console.log($cTypesBtns);
-        $cTypesBtns.click(changeSelectedRadioBtns);
+        $containerTypesRadioBtns.off("change");
+        $containerTypesRadioBtns.on("change", changeSelectedRadioBtns);
+
+        $containerDepartmentsRadioBtns.off("change");
+        $containerDepartmentsRadioBtns.on("change", changeSelectedRadioBtns);
     };
 
     function changeSelectedRadioBtns() {
 
-        var $btn = $(this);
-        var $cTypeId = $btn.attr("value");
-
-        var $radioToSelect = $btn.siblings("input[value=" + $cTypeId + "]");
-        $radioToSelect.prop("checked", true);
-        $radioToSelect.removeClass("btn-light").addClass("btn-primary");
+        $(this).parent("label")
+            .addClass("btn-custom-primary")
+            .siblings()
+            .removeClass("btn-custom-primary");
 
     }
 

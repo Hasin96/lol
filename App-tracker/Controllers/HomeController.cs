@@ -29,7 +29,23 @@ namespace App_tracker.Controllers
             viewModel.ContainerTypes = await _context.ContainerTypes.Select(ct => new ContainerTypes { Id = ct.Id, Type = ct.Type }).ToListAsync();
             viewModel.ContainerDepartments = await _context.ContainerDepartments.Select(cd => new ContainerDepartments { Id = cd.Id, Department = cd.Department }).ToListAsync();
             viewModel.Bays = await _context.Bays.Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync();
+            viewModel.Comments = new List<ContainerComments>();
             return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreateContainerViewModel containerVM)
+        {
+            var container = containerVM.Container;
+
+            //if (ModelState.IsValid)
+            //{
+            //    _context.Add(movie);
+            //    await _context.SaveChangesAsync();
+            //    return RedirectToAction(nameof(Index));
+            //}
+            //return View(movie);
         }
 
         public IActionResult Privacy()
