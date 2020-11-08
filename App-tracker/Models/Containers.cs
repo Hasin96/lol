@@ -21,15 +21,17 @@ namespace App_tracker.Models
         public int? ActNumOfUnits { get; set; }
         public int? ItemDiscrepancy { get; set; }
         public bool CheckSheet { get; set; }
-        public DateTime ArrivalDate { get; set; }
-        public int Bay { get; set; }
+        public DateTime? ArrivalDate { get; set; }
         public byte? DepartmentId { get; set; }
-        public byte TypeId { get; set; }
-        public string Door { get; set; }
-        public int BayId { get; set; }
+        public byte? TypeId { get; set; }
+        public int? BayId { get; set; }
+        public int? DoorId { get; set; }
+        public int StatusId { get; set; }
 
-        public virtual Bays BayNavigation { get; set; }
+        public virtual Bays Bay { get; set; }
         public virtual ContainerDepartments Department { get; set; }
+        public virtual Doors Door { get; set; }
+        public virtual ContainerStatus Status { get; set; }
         public virtual ContainerTypes Type { get; set; }
         public virtual ICollection<ContainerComments> ContainerComments { get; set; }
         public virtual ICollection<ContainerSuppliers> ContainerSuppliers { get; set; }

@@ -1,139 +1,98 @@
-﻿@model App_tracker.ViewModels.CreateContainerViewModel
+﻿@model App_tracker.ViewModels.ContainersViewModel
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Today's appointments";
 }
 
-
 <style>
-    #appointment-form .btn {
-        cursor: pointer;
+    .custom-card-title {
+        font-size: 12px;
+        color: #102A42;
     }
 
-    
+    .custom-card-deemphasize {
+        font-size: 10px;
+        color: #829AB0;
+    }
 </style>
 
-<h1 class="mt-5 custom-text-default custom-title">Log appointment</h1>
-<form asp-controller="Home" asp-action="Create" method="post" id="appointment-form">
-    <div class="row custom-row-seperator">
-        <div class="col-12 col-xl pl-0 mb-2">
-            <h2 class="custom-sub-title">Expected information</h2>
-            <p class="custom-information">This information should be on the sheet that shows all of the deliveries for the day</p>
-        </div>
-        <div class="pl-0 pl-md-0 pl-sm-0 pl-xs-0 pl-lg-0 col-12 col-xl-8">
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="RefNum">Reference / Appointment Number</label>
-                <input asp-for="RefNum" class="form-control">
-            </div>
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="Supplier">Supplier</label>
-                <input asp-for="Supplier" type="text" class="form-control">
-            </div>
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="ExpTimeOfArrival">Expected Arrival Time</label>
-                <input asp-for="ExpTimeOfArrival" class="form-control">
-            </div>
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="ExpNumOfPallets">Expected Number of Pallets</label>
-                <input asp-for="ExpNumOfPallets" class="form-control">
-            </div>
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="ExpNumOfUnits">Expected Number of Units</label>
-                <input asp-for="ExpNumOfUnits" class="form-control">
-            </div>
-            <div class="form-group">
-                <label class="text-custom-primary" for="exampleInputEmail1">Container Type</label>
-                <div class="js-container-types">
-                    @foreach (var containerType in Model.ContainerTypes)
+<div class="row">
+    @foreach (var containerStatus in Model.ContainerStatuses)
+    {
+        <div class="col">
+            <div class="card">
+                <div class="card-body js-status-column" data-status-id="@containerStatus.Id">
+                    <h1 class="custom-sub-title custom-row-seperator">@containerStatus.Status</h1>
+                    @foreach (var container in Model.Containers)
                     {
-                        // Manually added an ID to create unique IDs to allow labels to focus the correct radio btn when clicked.
-                        <label class="form-check-label btn btn-light" value="@containerType.Id">
-                            <input asp-for="ContainerTypeId" class="form-check-input invisible" type="radio" value="@containerType.Id">
-                            @containerType.Type
-                        </label>
+                        @if (container.StatusId == containerStatus.Id)
+                        {
+                            <div class="card js-custom-container-card mb-2" draggable="true" id="@container.Id">
+                                <div class="card-body pt-1 pb-1">
+                                    <div class="row">
+                                        <div class="col pl-0">
+                                            <div class="custom-card-title">@container.RefNum</div>
+                                        </div>
+                                        <div class="pr-0 col d-flex justify-content-end" style="font-size: 12px;">
+                                            @container.Bay?.Bay
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col pl-0">
+                                            <div class="custom-card-deemphasize">
+                                                @Model.ToString(container)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     }
                 </div>
             </div>
-            <div class="form-group">
-                <label class="text-custom-primary" for="exampleInputEmail1">Container Departments</label>
-                <div class="js-container-departments">
-                    @foreach (var containerDepartments in Model.ContainerDepartments)
-                    {
-                        <label class="form-check-label btn btn-light">
-                            <input asp-for="ContainerDepartmentId" class="form-check-input invisible" type="radio" value="@containerDepartments.Id">
-                            @containerDepartments.Department
-                        </label>
-                    }
-                </div>
+
+        </div>
+    }
+</div>
+
+<!-- Add bay and door number -->
+<div class="modal fade" id="activationDetailsFormModal" tabindex="-1" role="dialog" aria-labelledby="activationDetailsFormModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <form class="containerActivationDetailsForm">
+                    <input type="hidden" name="ContainerId" />
+                    <input type="hidden" name="NewStatusId" />
+                    <div class="form-group">
+                        <label class="text-custom-primary" asp-for="Bays">Bay</label>
+                        <select name="BayId" asp-items="@Model.Bays" class="form-control" required>
+                            <option value=""></option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="text-custom-primary" asp-for="Doors">Door</label>
+                        <select name="DoorId" asp-items="@Model.Doors" class="form-control" required>
+                            <option value=""></option>
+                        </select>
+                    </div>
+                    <div class="d-flex flex-row-reverse">
+                        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary mr-2">Add</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-    <div class="row custom-row-seperator">
-        <div class="col-12 col-xl pl-0 mb-2">
-            <h2 class="custom-sub-title">Actual Information</h2>
-            <p class="custom-information">Some of this information will need to be filled out after everything has been received.</p>
-        </div>
-        <div class="pl-0 pl-md-0 pl-sm-0 pl-xs-0 pl-lg-0 col-12 col-xl-8">
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="Bay">Bay</label>
-                <select asp-for="Bay" asp-items="@Model.Bays" class="form-control">
-                    <option>Select the bay that the container is being tipped on.</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="Door">Door</label>
-                <input asp-for="Door" type="text" class="form-control">
-            </div>
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="ActTimeOfArrival">Actual Arrival Time</label>
-                <input asp-for="ActTimeOfArrival" type="text" class="form-control">
-            </div>
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="ActNumOfPallets">Actual Number of Pallets</label>
-                <input asp-for="ActNumOfPallets" type="text" class="form-control">
-            </div>
-            <div class="form-group">
-                <label class="text-custom-primary" asp-for="ActNumOfUnits">Actual Number of Units</label>
-                <input asp-for="ActNumOfUnits" type="text" class="form-control">
-            </div>
-        </div>
-    </div>
-    <div class="row custom-row-seperator">
-        <div class="col-12 col-xl pl-0 mb-2">
-            <h2 class="custom-sub-title">Extra Information</h2>
-            <p class="custom-information">This can be giving a reason on why a PO number is over received or under received.</p>
-        </div>
-        <div class="pl-0 pl-md-0 pl-sm-0 pl-xs-0 pl-lg-0 col-12 col-xl-8">
-            <div class="form-group">
-                <label class="text-custom-primary">Comments</label>
-                @for (var i = 0; i < Model.Comments.Count(); i++)
-                {
-                    <input asp-for="Comments[i]" class="form-control" type="text" value="@Model.Comments[i].Comment" />
-                }
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-12 col-xl pl-0 pr-0 mb-2 d-flex flex-row-reverse">
-            <button class="btn btn-primary" type="submit" style="min-width:93.75px">Save</button>
-        </div>
-    </div>
-</form>
+</div>
+
 @section Scripts
 {
     <environment include="Development">
 
-        <script src="~/js/Views/Home/createAppointment.js"></script>
+        <script src="~/js/Views/Home/index.js"></script>
         <script>
             $(document).ready(function () {
-                create_appointment_module.init();
+                IndexModule.init();
             })
         </script>
     </environment>
 }
-
-@*<environment exclude="Development">
-        <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/css/bootstrap.min.css"
-              asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.min.css"
-              asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
-        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
-    </environment>*@

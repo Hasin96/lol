@@ -25,27 +25,215 @@ namespace App_tracker.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var viewModel = new CreateContainerViewModel();
-            viewModel.ContainerTypes = await _context.ContainerTypes.Select(ct => new ContainerTypes { Id = ct.Id, Type = ct.Type }).ToListAsync();
-            viewModel.ContainerDepartments = await _context.ContainerDepartments.Select(cd => new ContainerDepartments { Id = cd.Id, Department = cd.Department }).ToListAsync();
-            viewModel.Bays = await _context.Bays.Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync();
-            viewModel.Comments = new List<ContainerComments>();
+            _context.ChangeTracker.LazyLoadingEnabled = false;
+
+            var viewModel = new ContainersViewModel()
+            {
+                ContainerStatuses = await _context.ContainerStatus.AsNoTracking().ToListAsync(),
+                Containers = await _context.Containers.AsNoTracking().Include(c => c.Bay).Include(c => c.ContainerSuppliers).ThenInclude(ccs => ccs.Supplier).ToListAsync(), // Have to change to get for todays.
+                Bays = await _context.Bays.AsNoTracking().Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync(),
+                Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door.ToString() }).ToListAsync()
+            };
+
             return View(viewModel);
+        }
+
+        public async Task<IActionResult> Create()
+        {
+            return View("AppointmentForm", await CreateViewModelWithPopulatedFormInputs());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateContainerViewModel containerVM)
         {
-            var container = containerVM.Container;
 
-            //if (ModelState.IsValid)
-            //{
-            //    _context.Add(movie);
-            //    await _context.SaveChangesAsync();
-            //    return RedirectToAction(nameof(Index));
-            //}
-            //return View(movie);
+            if (ModelState.IsValid == false)
+            {
+                return View(await CreateViewModelWithPopulatedFormInputs());
+            }
+
+            int? itemD = null;
+            if (containerVM.ExpNumOfUnits != null && containerVM.ActNumOfUnits != null)
+                itemD = containerVM.ExpNumOfUnits.Value - containerVM.ActNumOfUnits.Value;
+
+            var container = new Containers()
+            {
+                RefNum = containerVM.RefNum,
+                ExpTimeOfArrival = containerVM.ExpTimeOfArrival,
+                ExpNumOfUnits = containerVM.ExpNumOfUnits,
+                ExpNumOfPallets = containerVM.ExpNumOfPallets,
+                ActTimeOfArrival = containerVM.ActTimeOfArrival,
+                ActNumOfUnits = containerVM.ActNumOfUnits,
+                ActNumOfPallets = containerVM.ActNumOfPallets,
+                ArrivalDate = DateTime.Today,
+                DepartmentId = containerVM.ContainerDepartmentId,
+                TypeId = containerVM.ContainerTypeId,
+                BayId = containerVM.BayId,
+                DoorId = containerVM.DoorId,
+                StatusId = await _context.ContainerStatus.Where(cs => cs.Status == "Pending dim checks").Select(cs => cs.Id).FirstOrDefaultAsync(),
+                ItemDiscrepancy = (containerVM.ExpNumOfUnits.HasValue && containerVM.ActNumOfUnits.HasValue) ? (containerVM.ExpNumOfUnits.Value - containerVM.ActNumOfUnits.Value) : (int?)null
+            };
+
+            _context.Add(container);
+
+            await _context.SaveChangesAsync();
+
+            foreach (var comment in containerVM.Comments)
+            {
+                var containerComment = new ContainerComments()
+                {
+                    ContainerId = container.Id,
+                    Comment = comment.Comment
+                };
+
+                _context.Add(containerComment);
+            }
+
+            if (containerVM.SupplierIds.Count() > 0)
+            {
+                foreach(var supplierId in containerVM.SupplierIds)
+                {
+                    var containerSuppliers = new ContainerSuppliers()
+                    {
+                        ContainerId = container.Id,
+                        SupplierId = supplierId.Value
+                    };
+
+                    _context.Add(containerSuppliers);
+                }
+                
+            }
+
+            await _context.SaveChangesAsync();
+                
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Edit(int? id)
+        {
+            _context.ChangeTracker.LazyLoadingEnabled = false;
+
+            if (id == null)
+                return BadRequest("Not a valid container id");
+
+            var container = await _context.Containers.Include(c => c.ContainerComments).Include(c => c.ContainerSuppliers).Where(c => c.Id == id).Select(c =>
+            new CreateContainerViewModel
+            {
+                ContainerId = c.Id,
+                RefNum = c.RefNum,
+                ExpTimeOfArrival = c.ExpTimeOfArrival.Value,
+                ExpNumOfPallets = c.ExpNumOfPallets.Value,
+                ExpNumOfUnits = c.ExpNumOfUnits.Value,
+                ActTimeOfArrival = c.ActTimeOfArrival.Value,
+                ActNumOfPallets = c.ActNumOfPallets.Value,
+                ActNumOfUnits = c.ActNumOfUnits.Value,
+                SupplierIds = c.ContainerSuppliers.Select(cs => (int?)cs.SupplierId).ToList(),
+                BayId = c.BayId,
+                DoorId = c.DoorId,
+                ContainerTypeId = c.TypeId,
+                ContainerDepartmentId = c.DepartmentId,
+                Comments = c.ContainerComments.ToList(),
+                })
+                .FirstOrDefaultAsync();
+
+            if (container == null)
+                return NotFound("Container record not found");
+
+            container.ContainerTypes = await _context.ContainerTypes.AsNoTracking().Select(ct => new ContainerTypes { Id = ct.Id, Type = ct.Type }).ToListAsync();
+            container.ContainerDepartments = await _context.ContainerDepartments.AsNoTracking().Select(cd => new ContainerDepartments { Id = cd.Id, Department = cd.Department }).ToListAsync();
+            container.Bays = await _context.Bays.AsNoTracking().Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync();
+            container.Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door }).ToListAsync();
+            container.Suppliers = await _context.Suppliers.AsNoTracking().OrderBy(s => s.Supplier).Select(s => new SelectListItem() { Value = s.Id.ToString(), Text = s.Supplier }).ToListAsync();
+
+            return View("AppointmentForm", container);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Update(CreateContainerViewModel containerVM)
+        {
+            if (ModelState.IsValid == false)
+            {
+                return View(await CreateViewModelWithPopulatedFormInputs());
+            }
+
+            var container = await _context.Containers.FindAsync(containerVM.ContainerId);
+
+            if (container == null)
+                return NotFound("Container record not found");
+
+            container.RefNum = containerVM.RefNum;
+            container.ExpTimeOfArrival = containerVM.ExpTimeOfArrival;
+            container.ExpNumOfUnits = containerVM.ExpNumOfUnits;
+            container.ExpNumOfPallets = containerVM.ExpNumOfPallets;
+            container.ActTimeOfArrival = containerVM.ActTimeOfArrival;
+            container.ActNumOfUnits = containerVM.ActNumOfUnits;
+            container.ActNumOfPallets = containerVM.ActNumOfPallets;
+            container.ArrivalDate = DateTime.Today;
+            container.DepartmentId = containerVM.ContainerDepartmentId;
+            container.TypeId = containerVM.ContainerTypeId;
+            container.BayId = containerVM.BayId;
+            container.DoorId = containerVM.DoorId;
+            container.StatusId = await _context.ContainerStatus.Where(cs => cs.Status == "Pending dim checks").Select(cs => cs.Id).FirstOrDefaultAsync();
+            container.ItemDiscrepancy = (containerVM.ExpNumOfUnits.HasValue && containerVM.ActNumOfUnits.HasValue) ? (containerVM.ExpNumOfUnits.Value - containerVM.ActNumOfUnits.Value) : (int?)null;
+
+            _context.Update(container);
+
+            foreach (var comment in containerVM.Comments)
+            {
+                if (comment.Id == 0)
+                {
+                    var containerComment = new ContainerComments()
+                    {
+                        ContainerId = container.Id,
+                        Comment = comment.Comment
+                    };
+
+                    _context.Add(containerComment);
+                } else if (comment.Id != 0)
+                {
+                    _context.Update(comment);
+                }
+            }
+
+            if (containerVM.SupplierIds.Count() > 0)
+            {
+                var savedSuppliers = await _context.ContainerSuppliers.Where(cs => cs.ContainerId == container.Id).ToListAsync();
+                var suppliersToDel = new List<ContainerSuppliers>(savedSuppliers);
+                    
+                foreach (var supplierId in containerVM.SupplierIds)
+                {
+                    bool addThisSupplier = true;
+                    foreach (var savedSupplier in savedSuppliers)
+                    {
+                        if (savedSupplier.SupplierId == supplierId)
+                        {
+                            addThisSupplier = false;
+                            suppliersToDel.Remove(savedSupplier);
+                        }
+                    }
+
+                    if (addThisSupplier)
+                    {
+                        var containerSuppliers = new ContainerSuppliers()
+                        {
+                            ContainerId = container.Id,
+                            SupplierId = supplierId.Value
+                        };
+
+                        _context.Add(containerSuppliers);
+                    }
+                    
+                }
+
+                _context.RemoveRange(suppliersToDel);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+
         }
 
         public IActionResult Privacy()
@@ -57,6 +245,18 @@ namespace App_tracker.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        private async Task<CreateContainerViewModel> CreateViewModelWithPopulatedFormInputs()
+        {
+            var containerVM = new CreateContainerViewModel();
+            containerVM.ContainerTypes = await _context.ContainerTypes.AsNoTracking().Select(ct => new ContainerTypes { Id = ct.Id, Type = ct.Type }).ToListAsync();
+            containerVM.ContainerDepartments = await _context.ContainerDepartments.AsNoTracking().Select(cd => new ContainerDepartments { Id = cd.Id, Department = cd.Department }).ToListAsync();
+            containerVM.Bays = await _context.Bays.AsNoTracking().Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync();
+            containerVM.Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door }).ToListAsync();
+            containerVM.Suppliers = await _context.Suppliers.AsNoTracking().OrderBy(s => s.Supplier).Select(s => new SelectListItem() { Value = s.Id.ToString(), Text = s.Supplier }).ToListAsync();
+
+            return containerVM;
         }
     }
 }
