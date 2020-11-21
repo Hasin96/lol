@@ -23,7 +23,7 @@ namespace App_tracker.Models
         public bool CheckSheet { get; set; }
         public DateTime? ArrivalDate { get; set; }
         public byte? DepartmentId { get; set; }
-        public byte? TypeId { get; set; }
+        public byte TypeId { get; set; }
         public int? BayId { get; set; }
         public int? DoorId { get; set; }
         public int StatusId { get; set; }

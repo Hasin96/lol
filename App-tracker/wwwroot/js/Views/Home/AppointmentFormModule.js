@@ -1,5 +1,44 @@
 ﻿var AppointmentFormModule = (function () {
 
+    // -- JS SUPPLIER SELECTOR STARTS 
+
+    var $chosenSuppliers = $(".js-chosen-suppliers");
+    var $supplierSelectList = $(".js-supplier-select");
+
+    $supplierSelectList.off("change");
+    $supplierSelectList.on("change", function () {
+        var supplier = $(this).find(":selected").text();
+
+        $('<p class="badge badge-light"> ' + supplier 
+            + ' <svg xmlns="http://www.w3.org/2000/svg" data-supplier-id="' + $(this).val() + '" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="deselect-supplier-icon js-deselect-supplier-icon feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+            + '<p> ')
+            .appendTo($chosenSuppliers);
+
+        var currentSelectedSuppliers = $supplierSelect.val() || [];
+        currentSelectedSuppliers.push($(this).val());
+
+        $supplierSelect.val(currentSelectedSuppliers);
+
+        $(this).val("");
+    });
+
+    $chosenSuppliers.on("click", ".js-deselect-supplier-icon", function (e) {
+
+        var currentSelectedSuppliers = $supplierSelect.val();
+
+        for (var i = 0; i < currentSelectedSuppliers.length; i++) {
+            if (currentSelectedSuppliers[i] == $(this).attr("data-supplier-id")) {
+                console.log("De selecting supplier with the ID of : " + currentSelectedSuppliers[i]);
+                currentSelectedSuppliers.splice(i, 1);
+                $supplierSelect.val(currentSelectedSuppliers);
+                $(this).parent(".badge").remove();
+                break;
+            }
+        }
+    });
+
+
+    // -- JS SUPPLIER SELECTOR ENDS
     //... Data
     var data = {};
 

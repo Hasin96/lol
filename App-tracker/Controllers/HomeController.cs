@@ -17,23 +17,66 @@ namespace App_tracker.Controllers
         private readonly ILogger<HomeController> _logger;
         private AppointmentTrackerContext _context;
 
+        // Seeds to calculate if the current date is a in the 4 day work week and what it is.
+        private DateTime _dayOne = new DateTime(2020, 11, 14);
+        private DateTime _dayTwo = new DateTime(2020, 11, 15);
+        private DateTime _dayThree = new DateTime(2020, 11, 16);
+        private DateTime _dayFour = new DateTime(2020, 11, 17);
+
         public HomeController(ILogger<HomeController> logger, AppointmentTrackerContext context)
         {
             _logger = logger;
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string searchString)
         {
             _context.ChangeTracker.LazyLoadingEnabled = false;
+
+            var today = new DateTime(2020, 11, 13);
+
+            var difference = (today - _dayOne).Days % 8;
+            var difference2 = (today - _dayTwo).Days % 8;
+            var difference3 = (today - _dayThree).Days % 8;
+            var difference4 = (today - _dayFour).Days % 8;
+
+            DateTime startOf4DayWeek = new DateTime();
+            bool promptForStartDate = true;
+
+            if (difference == 0)
+            {
+                startOf4DayWeek = today;
+                promptForStartDate = false;
+            }
+            else if (difference2 == 0)
+            {
+                startOf4DayWeek = today.AddDays(-1);
+                promptForStartDate = false;
+            }
+            else if (difference3 == 0)
+            {
+                startOf4DayWeek = today.AddDays(-2);
+                promptForStartDate = false;
+            }
+            else if (difference4 == 0)
+            {
+                startOf4DayWeek = today.AddDays(-3);
+                promptForStartDate = false;
+            }
+
+            var containers = await _context.Containers.AsNoTracking().Include(c => c.Bay).Include(c => c.ContainerComments).Include(c => c.ContainerSuppliers).ThenInclude(cs => cs.Supplier).Where(c => c.ArrivalDate >= startOf4DayWeek).ToListAsync();
 
             var viewModel = new ContainersViewModel()
             {
                 ContainerStatuses = await _context.ContainerStatus.AsNoTracking().ToListAsync(),
-                Containers = await _context.Containers.AsNoTracking().Include(c => c.Bay).Include(c => c.ContainerSuppliers).ThenInclude(ccs => ccs.Supplier).ToListAsync(), // Have to change to get for todays.
+                Containers = containers,
                 Bays = await _context.Bays.AsNoTracking().Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync(),
-                Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door.ToString() }).ToListAsync()
+                Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door.ToString() }).ToListAsync(),
+                PromptForStartDate = promptForStartDate,
+                StartOf4DayWeekDate = startOf4DayWeek
             };
+
+            _context.ChangeTracker.LazyLoadingEnabled = true;
 
             return View(viewModel);
         }
@@ -71,7 +114,7 @@ namespace App_tracker.Controllers
                 TypeId = containerVM.ContainerTypeId,
                 BayId = containerVM.BayId,
                 DoorId = containerVM.DoorId,
-                StatusId = await _context.ContainerStatus.Where(cs => cs.Status == "Pending dim checks").Select(cs => cs.Id).FirstOrDefaultAsync(),
+                StatusId = containerVM.ContainerStatusId,
                 ItemDiscrepancy = (containerVM.ExpNumOfUnits.HasValue && containerVM.ActNumOfUnits.HasValue) ? (containerVM.ExpNumOfUnits.Value - containerVM.ActNumOfUnits.Value) : (int?)null
             };
 
@@ -90,7 +133,7 @@ namespace App_tracker.Controllers
                 _context.Add(containerComment);
             }
 
-            if (containerVM.SupplierIds.Count() > 0)
+            if (containerVM.SupplierIds?.Count() > 0)
             {
                 foreach(var supplierId in containerVM.SupplierIds)
                 {
@@ -133,6 +176,7 @@ namespace App_tracker.Controllers
                 DoorId = c.DoorId,
                 ContainerTypeId = c.TypeId,
                 ContainerDepartmentId = c.DepartmentId,
+                ContainerStatusId = c.StatusId,
                 Comments = c.ContainerComments.ToList(),
                 })
                 .FirstOrDefaultAsync();
@@ -145,6 +189,7 @@ namespace App_tracker.Controllers
             container.Bays = await _context.Bays.AsNoTracking().Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync();
             container.Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door }).ToListAsync();
             container.Suppliers = await _context.Suppliers.AsNoTracking().OrderBy(s => s.Supplier).Select(s => new SelectListItem() { Value = s.Id.ToString(), Text = s.Supplier }).ToListAsync();
+            container.Statuses = await _context.ContainerStatus.AsNoTracking().Select(cs => new SelectListItem() { Value = cs.Id.ToString(), Text = cs.Status }).ToListAsync();
 
             return View("AppointmentForm", container);
         }
@@ -175,7 +220,7 @@ namespace App_tracker.Controllers
             container.TypeId = containerVM.ContainerTypeId;
             container.BayId = containerVM.BayId;
             container.DoorId = containerVM.DoorId;
-            container.StatusId = await _context.ContainerStatus.Where(cs => cs.Status == "Pending dim checks").Select(cs => cs.Id).FirstOrDefaultAsync();
+            container.StatusId = containerVM.ContainerStatusId;
             container.ItemDiscrepancy = (containerVM.ExpNumOfUnits.HasValue && containerVM.ActNumOfUnits.HasValue) ? (containerVM.ExpNumOfUnits.Value - containerVM.ActNumOfUnits.Value) : (int?)null;
 
             _context.Update(container);
@@ -255,6 +300,7 @@ namespace App_tracker.Controllers
             containerVM.Bays = await _context.Bays.AsNoTracking().Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync();
             containerVM.Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door }).ToListAsync();
             containerVM.Suppliers = await _context.Suppliers.AsNoTracking().OrderBy(s => s.Supplier).Select(s => new SelectListItem() { Value = s.Id.ToString(), Text = s.Supplier }).ToListAsync();
+            containerVM.Statuses = await _context.ContainerStatus.AsNoTracking().Select(cs => new SelectListItem() { Selected = cs.Id == 1 ? true : false, Value = cs.Id.ToString(), Text = cs.Status }).ToListAsync();
 
             return containerVM;
         }

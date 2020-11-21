@@ -1,6 +1,7 @@
 ﻿using App_tracker.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore.Internal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,6 +20,8 @@ namespace App_tracker.ViewModels
         public List<Containers> Containers { get; set; }
         public List<SelectListItem> Bays { get; set; }
         public List<SelectListItem> Doors { get; set; }
+        public bool PromptForStartDate { get; set; }
+        public DateTime StartOf4DayWeekDate { get; set; }
 
         public string ToString(Containers container)
         {

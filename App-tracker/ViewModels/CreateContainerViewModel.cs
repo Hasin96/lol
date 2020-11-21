@@ -32,13 +32,17 @@ namespace App_tracker.ViewModels
         public DateTime? ArrivalDate { get; set; }
         public int? BayId { get; set; }
         public int? DoorId { get; set; }
-        public byte? ContainerTypeId { get; set; }
+
+        [Required]
+        public byte ContainerTypeId { get; set; }
         public byte? ContainerDepartmentId { get; set; }
+        public int ContainerStatusId { get; set; } 
         public List<int?> SupplierIds { get; set; }
         public List<ContainerComments> Comments { get; set; }
         public IEnumerable<SelectListItem> Doors { get; set; }
         public IEnumerable<SelectListItem> Suppliers { get; set; }
         public IEnumerable<SelectListItem> Bays { get; set; }
+        public IEnumerable<SelectListItem> Statuses { get; set; }
         public IEnumerable<ContainerTypes> ContainerTypes { get; set; }
         public IEnumerable<ContainerDepartments> ContainerDepartments { get; set; }
         public string Action {

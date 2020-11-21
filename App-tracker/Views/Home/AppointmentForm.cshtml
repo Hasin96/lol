@@ -12,13 +12,25 @@
     .input-invalid {
         border-color: #dc3545 !important;
     }
+
+    .chosen-suppliers p{
+        display:inline-block;
+    }
+
+    .chosen-suppliers p:not(:last-child) {
+        margin-right:5px;
+    }
+
+    .deselect-supplier-icon {
+        cursor:pointer;
+    }
 </style>
 
 <div class="alert alert-success js-add-supplier-success-msg" style="display:none;">
     Successfully added new supplier {{supplier}}
 </div>
 
-<h1 class="mt-5 custom-text-default custom-title">Log appointment</h1>
+<h1 class="mt-5 custom-text-default custom-title custom-border-seperator">Log appointment</h1>
 <form asp-controller="Home" asp-action="@Model.Action" method="post" id="appointment-form">
     <input asp-for="ContainerId" type="hidden">
     <div class="row custom-row-seperator">
@@ -41,7 +53,13 @@
                         Add a supplier
                     </a>
                 </span>
-                <select asp-for="SupplierIds" asp-items="@Model.Suppliers" class="form-control">
+                <select asp-items="@Model.Suppliers" class="form-control js-supplier-select mb-2">
+                    <option value="">Select the container supplier(s).</option>
+                </select>
+                <div class="form-control chosen-suppliers js-chosen-suppliers">
+
+                </div>
+                <select asp-for="SupplierIds" asp-items="@Model.Suppliers" class="form-control d-none">
                     <option value="">Select the container supplier(s).</option>
                 </select>
             </div>
@@ -58,6 +76,11 @@
                 <input asp-for="ExpNumOfUnits" class="form-control">
             </div>
             <div class="form-group">
+                <label class="text-custom-primary" asp-for="Statuses">Status</label>
+                <select asp-for="ContainerStatusId" asp-items="@Model.Statuses" class="form-control">
+                </select>
+            </div>
+            <div class="form-group">
                 <label class="text-custom-primary" for="exampleInputEmail1">Container Type</label>
                 <div class="js-container-types">
                     @foreach (var containerType in Model.ContainerTypes)
@@ -67,6 +90,7 @@
                             <input asp-for="ContainerTypeId" class="form-check-input invisible" type="radio" value="@containerType.Id">
                             @containerType.Type
                         </label>
+                        <span asp-validation-for="ContainerTypeId" class="text-danger"></span>
                     }
                 </div>
             </div>

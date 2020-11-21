@@ -56,7 +56,6 @@ namespace App_tracker.Models
                 entity.HasOne(d => d.Container)
                     .WithMany(p => p.ContainerComments)
                     .HasForeignKey(d => d.ContainerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ContainerComments_ContainerId");
             });
 
@@ -94,13 +93,11 @@ namespace App_tracker.Models
                 entity.HasOne(d => d.Container)
                     .WithMany(p => p.ContainerSuppliers)
                     .HasForeignKey(d => d.ContainerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ContainerSuppliers_Containers");
 
                 entity.HasOne(d => d.Supplier)
                     .WithMany(p => p.ContainerSuppliers)
                     .HasForeignKey(d => d.SupplierId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ContainerSuppliers_Suppliers");
             });
 
@@ -182,6 +179,7 @@ namespace App_tracker.Models
                 entity.HasOne(d => d.Type)
                     .WithMany(p => p.Containers)
                     .HasForeignKey(d => d.TypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Containers_ContainerTypes");
             });
 
