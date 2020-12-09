@@ -22,7 +22,14 @@ namespace App_tracker.ViewModels
         public List<SelectListItem> Doors { get; set; }
         public bool PromptForStartDate { get; set; }
         public DateTime StartOf4DayWeekDate { get; set; }
-
+        public List<ContainerTypes> ContainerTypes { get; set; }
+        public List<ContainerDepartments> ContainerDepartments { get;  set; }
+        public string ReferenceNumber { get; set; }
+        public int? Bay { get; set; }
+        public DateTime? CustomStartDate { get; set; }
+        public int TypeId { get; set; }
+        public int DepartmentId { get; set; }
+        public string Supplier { get; set; }
         public string ToString(Containers container)
         {
             string suppliers = "";

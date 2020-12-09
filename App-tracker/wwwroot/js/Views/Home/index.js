@@ -1,5 +1,32 @@
 ﻿var IndexModule = (function () {
 
+    // Filters btn
+
+    var $filterSection = $(".actions");
+    var $filterForm = $filterSection.find("form");
+
+    var filtersTemplate = $filterSection.find(".js-filter-template");
+
+    var $toggleFilterBtn = $filterSection.find(".js-toggle-filter-btn");
+    var popoverOptionsForFilterBtn = {
+        placement: 'bottom',
+        content: function () {
+            return filtersTemplate.removeClass("d-none");
+        },
+        html: true,
+        container: 'body',
+
+    };
+    $toggleFilterBtn.popover(popoverOptionsForFilterBtn);
+
+    $(document).on("click", ".js-reset-filters-btn", function () {
+        $filterForm.find("input").val(null);
+        $filterForm.find("select").val(0);
+        $filterForm.submit();
+    });
+
+    // Filters btn end
+
     // excel sheet
     
 
@@ -47,6 +74,8 @@
     var $delContainerBtn = $(".js-delete-container-btn");
     $delContainerBtn.off("click");
     $(document).on("click", ".js-delete-container-btn", function (e) {
+        e.stopPropagation();
+        e.preventDefault();
         $confirmDelBtn.attr("data-container-id", $(this).attr("data-container-id"));
         $confirmDeleteModal.modal("show");
     });
@@ -96,7 +125,10 @@
             .done(function (result) {
                 hideShowingModal();
                 var bay = $form.find("select[name=BayId] option:selected").text();
-                $("#" + containerId).find(".js-bay").html(bay);
+                var html = $("#" + containerId).find(".js-bay").html();
+                html = html.replace("{{bay}}", bay);
+                $("#" + containerId).find(".js-bay").html(html);
+                $("#" + containerId).find(".js-bay").removeClass("d-none");
                 $form.find("input").val("");
                 $form.find("select").val("");
 
@@ -150,9 +182,9 @@
         var containerId = ev.dataTransfer.getData("card-id/container-id");
         var newStatusId = $(ev.target).attr("data-status-id");
         var c = $("#" + containerId);
-        var bay = c.find(".js-bay").text();
+        var $bay = c.find(".js-bay");
         console.log(newStatusId);
-        if ((bay == "" || bay == null) && newStatusId > 2) {
+        if ($bay.hasClass("d-none") && newStatusId > 2) {
             $containerActivationDetailsForm.find("input[name=ContainerId]").val(containerId);
             $containerActivationDetailsForm.find("input[name=NewStatusId]").val(newStatusId);
             $containerActivationDetailsFormModal.modal("show");

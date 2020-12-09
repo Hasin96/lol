@@ -29,52 +29,97 @@ namespace App_tracker.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(string searchString)
+        public async Task<IActionResult> Index(ContainersViewModel viewModel = null)
         {
             _context.ChangeTracker.LazyLoadingEnabled = false;
 
-            var today = new DateTime(2020, 11, 13);
-
-            var difference = (today - _dayOne).Days % 8;
-            var difference2 = (today - _dayTwo).Days % 8;
-            var difference3 = (today - _dayThree).Days % 8;
-            var difference4 = (today - _dayFour).Days % 8;
-
             DateTime startOf4DayWeek = new DateTime();
-            bool promptForStartDate = true;
+            bool askForStartDate = true;
 
-            if (difference == 0)
+            if (viewModel?.CustomStartDate == null)
             {
-                startOf4DayWeek = today;
-                promptForStartDate = false;
-            }
-            else if (difference2 == 0)
+                //var today = DateTime.Today;
+                var today = new DateTime(2020, 11, 30);
+
+                var difference = (today - _dayOne).Days % 8;
+                var difference2 = (today - _dayTwo).Days % 8;
+                var difference3 = (today - _dayThree).Days % 8;
+                var difference4 = (today - _dayFour).Days % 8;
+
+                if (difference == 0)
+                {
+                    startOf4DayWeek = today;
+                    askForStartDate = false;
+                }
+                else if (difference2 == 0)
+                {
+                    startOf4DayWeek = today.AddDays(-1);
+                    askForStartDate = false;
+                }
+                else if (difference3 == 0)
+                {
+                    startOf4DayWeek = today.AddDays(-2);
+                    askForStartDate = false;
+                }
+                else if (difference4 == 0)
+                {
+                    startOf4DayWeek = today.AddDays(-3);
+                    askForStartDate = false;
+                }
+            } else
             {
-                startOf4DayWeek = today.AddDays(-1);
-                promptForStartDate = false;
-            }
-            else if (difference3 == 0)
-            {
-                startOf4DayWeek = today.AddDays(-2);
-                promptForStartDate = false;
-            }
-            else if (difference4 == 0)
-            {
-                startOf4DayWeek = today.AddDays(-3);
-                promptForStartDate = false;
+                askForStartDate = false;
+                startOf4DayWeek = (DateTime)(viewModel?.CustomStartDate.Value);
             }
 
-            var containers = await _context.Containers.AsNoTracking().Include(c => c.Bay).Include(c => c.ContainerComments).Include(c => c.ContainerSuppliers).ThenInclude(cs => cs.Supplier).Where(c => c.ArrivalDate >= startOf4DayWeek).ToListAsync();
+            var containers = _context.Containers
+                .AsNoTracking()
+                .Include(c => c.Bay)
+                .Include(c => c.ContainerComments)
+                .Include(c => c.Type)
+                .Include(c => c.ContainerSuppliers)
+                    .ThenInclude(cs => cs.Supplier)
+                .Where(c => c.ArrivalDate >= startOf4DayWeek && c.ArrivalDate < startOf4DayWeek.AddDays(5));
 
-            var viewModel = new ContainersViewModel()
+            if (string.IsNullOrEmpty(viewModel?.ReferenceNumber) == false)
+                containers = containers.Where(c => c.RefNum.Contains(viewModel.ReferenceNumber));
+
+            if (viewModel?.TypeId != 0)
+                containers = containers.Where(c => c.TypeId == viewModel.TypeId);
+
+            if (viewModel?.DepartmentId != 0)
+                containers = containers.Where(c => c.DepartmentId == viewModel.DepartmentId);
+
+            if (viewModel?.Bay != null)
+                containers = containers.Where(c => c.Bay.Bay == viewModel.Bay);
+
+            if (string.IsNullOrEmpty(viewModel?.Supplier) == false)
+                containers = containers.Where(c => c.ContainerSuppliers.Any(cs => cs.Supplier.Supplier.Equals(viewModel.Supplier)));
+
+            if (viewModel != null)
             {
-                ContainerStatuses = await _context.ContainerStatus.AsNoTracking().ToListAsync(),
-                Containers = containers,
-                Bays = await _context.Bays.AsNoTracking().Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync(),
-                Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door.ToString() }).ToListAsync(),
-                PromptForStartDate = promptForStartDate,
-                StartOf4DayWeekDate = startOf4DayWeek
-            };
+                viewModel.ContainerStatuses = await _context.ContainerStatus.AsNoTracking().ToListAsync();
+                viewModel.ContainerTypes = await _context.ContainerTypes.AsNoTracking().ToListAsync();
+                viewModel.ContainerDepartments = await _context.ContainerDepartments.AsNoTracking().ToListAsync();
+                viewModel.Containers = await containers.ToListAsync();
+                viewModel.Bays = await _context.Bays.AsNoTracking().Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync();
+                viewModel.Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door.ToString() }).ToListAsync();
+                viewModel.PromptForStartDate = askForStartDate;
+                viewModel.StartOf4DayWeekDate = startOf4DayWeek;
+            } else
+            {
+                viewModel = new ContainersViewModel()
+                {
+                    ContainerStatuses = await _context.ContainerStatus.AsNoTracking().ToListAsync(),
+                    ContainerTypes = await _context.ContainerTypes.AsNoTracking().ToListAsync(),
+                    ContainerDepartments = await _context.ContainerDepartments.AsNoTracking().ToListAsync(),
+                    Containers = await containers.ToListAsync(),
+                    Bays = await _context.Bays.AsNoTracking().Select(b => new SelectListItem() { Value = b.Id.ToString(), Text = b.Bay.ToString() }).ToListAsync(),
+                    Doors = await _context.Doors.AsNoTracking().Select(d => new SelectListItem() { Value = d.Id.ToString(), Text = d.Door.ToString() }).ToListAsync(),
+                    PromptForStartDate = askForStartDate,
+                    StartOf4DayWeekDate = startOf4DayWeek,
+                };
+            }
 
             _context.ChangeTracker.LazyLoadingEnabled = true;
 

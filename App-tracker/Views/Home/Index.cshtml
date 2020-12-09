@@ -4,13 +4,42 @@
 }
 
 <style>
-    .custom-card-title {
-        font-size: 12px;
+    /*
+        Bootstrap overrides
+    */
+
+    .popover {
+        max-width:750px !important;
+    }
+
+/*    .custom-btn-secondary {
+        font-size: 20px !important;
         color: #102A42;
+        text-decoration: underline;
+    }*/
+    /*
+        B   ootstrap overrides over
+    */
+    a:link,
+    a:focus,
+    a:hover {
+        text-decoration: none;
+    }
+
+
+    .custom-card-title {
+        font-size: 18px;
+        color: #102A42;
+        font-weight:600;
     }
 
     .custom-text-deemphasize {
-        font-size: 10px;
+        font-size: 14px;
+        color: #829AB0;
+    }
+
+    .custom-card-secondary-text {
+        font-size:12px;
         color: #829AB0;
     }
 
@@ -30,81 +59,206 @@
             margin-right: -15px;
         }
 
+    .status-columns:not(:last-child) {
+        padding-left:0 !important;
+        padding-right:10px !important;
+    }
+
+    .status-columns:last-child {
+        padding-left: 0 !important;
+        padding-right:0 !important;
+    }
+
+
     /*
         Icons
     */
-
     svg {
         cursor: pointer;
         text-decoration: none;
-        color: #102a42;
+        color: #829AB0;
     }
 
         svg:focus,
         svg:hover {
             text-decoration: none;
-            color: #102a42;
+            color: #829AB0;
         }
+
+
+
+        /*
+            pAGE OVERRIDES
+        */
+
+        .container {
+            max-width:1420px !important;
+        }
+
 </style>
 
 <h1 class="mt-5 custom-text-default custom-title">Appointments</h1>
     
-<section class="filters pl-0 pr-0">
-    <div class="input-group mb-2">
-        <div class="input-group-prepend">
-            <div class="input-group-text"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg></div>
-        </div>
-        <input type="text" class="form-control mr-2" placeholder="Search for an appointment" style="max-width:230px;">
-        <input type="date" class="form-control js-appointment-start-date-inp" style="max-width:200px;" value="@Model.StartOf4DayWeekDate.ToString("yyyy-MM-dd")" />
-        <a href="/api/containers/@Model.StartOf4DayWeekDate.ToString("yyyy-MM-dd")" class="btn btn-light mr-2 js-create-excel-btn">Generate excel file</a>
-        <a href="@Url.Action("Create", "Home")" class="btn btn-primary">Create new</a>
+<section class="actions pl-0 pr-0" style="margin-bottom:20px;">
+    <button class="btn btn-light js-toggle-filter-btn" style="font-size:20px;">
+        <svg class="feather feather-filter mr-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#BCCCDC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+        Filters
+    </button>
+    <div class="js-popover-template js-filter-template d-none">
+        <form asp-controller="Home" asp-action="Index" method="get">
+            <div class="row custom-row-seperator">
+                <div class="col-xs-4 col-lg-4 col-md-4 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label class="text-custom-primary">Appointment number</label>
+                        <input type="text" class="form-control" asp-for="ReferenceNumber"/>
+                    </div>
+                </div>
+                <div class="col-xs-4 col-lg-4 col-md-4 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label class="text-custom-primary">Supplier</label>
+                        <input type="text" class="form-control" asp-for="Supplier"/>
+                    </div>
+                </div>
+                <div class="col-xs-4 col-lg-4 col-md-4 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label class="text-custom-primary">Date from</label>
+                        <input type="date" class="form-control" value="@Model.StartOf4DayWeekDate.ToString("yyyy-MM-dd")" asp-for="CustomStartDate"/>
+                    </div>
+                </div>
+                <div class="col-xs-4 col-lg-4 col-md-4 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label class="text-custom-primary">Bay</label>
+                        <input type="number" class="form-control" asp-for="Bay"/>
+                    </div>
+                </div>
+                <div class="col-xs-4 col-lg-4 col-md-4 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label class="text-custom-primary">Container type</label>
+                        <select class="form-control" asp-for="TypeId">
+                            <option value="0">Show all</option>
+                            @foreach (var containerType in Model.ContainerTypes)
+                            {
+                                <option value="@containerType.Id">@containerType.Type</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-xs-4 col-lg-4 col-md-4 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label class="text-custom-primary">Container department</label>
+                        <select class="form-control" asp-for="DepartmentId">
+                            <option value="0">Show all</option>
+                            @foreach (var containerDepartment in Model.ContainerDepartments)
+                            {
+                                <option value="@containerDepartment.Id">@containerDepartment.Department</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-end">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary" style="min-width:160px;font-size:20px;">Apply</button>
+                    <button type="button" class="btn btn-light js-reset-filters-btn" style="min-width:160px;font-size:20px;">Clear all</button>
+                </div>
+            </div>
+        </form>
     </div>
+    <a href="/api/containers/@Model.StartOf4DayWeekDate.ToString("yyyy-MM-dd")" class="btn btn-light" style="font-size:20px;">
+        <svg class="feather feather-file-plus mr-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#BCCCDC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+        Export to excel
+    </a>
+    <a href="@Url.Action("Create", "Home")" class="btn btn-light" style="font-size:20px;">
+        <svg class="feather feather-plus mr-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#BCCCDC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add an appointment
+    </a>
+    @*<form asp-controller="Home" asp-action="Index" method="get">
+            <div class="input-group mb-2">
+                <input type="text" class="form-control" name="referenceNumber" placeholder="Quick search using reference number" style="max-width:230px;">
+                <div class="input-group-append">
+                    <button type="submit" class="input-group-text bg-transparent rounded"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg></button>
+                </div>
+                <select class="form-control ml-2 rounded" style="max-width:200px;" asp-for="TypeId">
+                    <option value="0">@Model.ContainerTypes[0].Type / @Model.ContainerTypes[1].Type</option>
+                    @foreach (var containerType in Model.ContainerTypes)
+                    {
+                        <option value="@containerType.Id">@containerType.Type</option>
+                    }
+                </select>
+                <input type="date" class="form-control js-appointment-start-date-inp ml-2 rounded" name="customStartDate" style="max-width:200px;" value="@Model.StartOf4DayWeekDate.ToString("yyyy-MM-dd")" />
+                <a href="/api/containers/@Model.StartOf4DayWeekDate.ToString("yyyy-MM-dd")" class="btn btn-light ml-2 js-create-excel-btn">Generate excel file</a>
+                <a href="@Url.Action("Create", "Home")" class="btn btn-primary ml-2">Create new</a>
+            </div>
+        </form>*@
 </section>
     
 
 <div class="row">
     @foreach (var containerStatus in Model.ContainerStatuses)
     {
-        <div class="col">
-            <div class="card">
+        <div class="col status-columns">
+            <div class="card bg-custom-well-color border-0" style="min-height:62vh;">
                 <div class="card-body js-status-column" data-status-id="@containerStatus.Id">
                     <h1 class="custom-sub-title custom-row-seperator">@containerStatus.Status</h1>
                     @foreach (var container in Model.Containers)
                     {
                         @if (container.StatusId == containerStatus.Id)
                         {
-                            <div class="card js-custom-container-card mb-2" draggable="true" id="@container.Id">
+                            <a href="@Url.Action("Edit", "Home", new { Id = container.Id })" class="card js-custom-container-card mb-2" draggable="true" id="@container.Id">
                                 <div class="card-body pt-1 pb-1">
                                     <div class="row">
-                                        <div class="col pl-0">
-                                            <div class="custom-card-title">@container.RefNum</div>
+                                        <div class="col pl-1 pr-1">
+                                            @if (container.ContainerSuppliers == null || container.ContainerSuppliers?.Count == 0)
+                                            {
+                                                <div class="custom-card-title">@container.Type?.Type[0]</div>
+                                            }
+                                            else
+                                            {
+                                                <div class="custom-card-title">@Model.ToString(container) - @container.Type?.Type[0]</div>
+                                            }
                                         </div>
-                                        <div class="pr-0 col d-flex justify-content-end js-more-icon" data-container-id="@container.Id">
-                                            <svg class="feather feather-more-vertical more-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                                        <div class="col pl-1 pr-1 d-flex flex-row-reverse">
+                                            <svg data-container-id="@container.Id" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2 js-delete-container-btn"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                                         </div>
                                     </div>
                                     <div class="row mb-2">
-                                        <div class="col pl-0">
+                                        <div class="col pl-1">
                                             <div class="custom-text-deemphasize">
-                                                @Model.ToString(container)
+                                                @container.RefNum
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col pl-0">
-                                            <p class="js-bay" style="font-size:12px;">
-                                                @container.Bay?.Bay
-                                            </p>
-                                        </div>
-                                    
-                                    </div>
-                                    <div class="row">
-                                        <div class="col pl-1">
-                                            <p>@container.ContainerComments.Count() <text>comments</text></p>
+                                        <div class="col pl-1 custom-card-secondary-text">
+                                            @if (container.ExpTimeOfArrival != null)
+                                            {
+                                                <span class="mr-2">Due at @container.ExpTimeOfArrival?.Hours:@container.ExpTimeOfArrival?.Minutes</span>
+                                            }
+                                            @if (container.Bay != null)
+                                            {
+                                                <span class="js-bay mr-2">
+                                                    <!-- Box --><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-archive mb-1"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+                                                    @container.Bay?.Bay
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="js-bay mr-2 d-none">
+                                                    <!-- Box --><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-archive mb-1"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+                                                    {{bay}}
+                                                </span>
+                                            }
+                                            @if (container.ContainerComments != null && container.ContainerComments?.Count != 0)
+                                            {
+                                                <span class="mr-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-message-circle mb-1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                                    @container.ContainerComments.Count()
+                                                </span>
+                                            }
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         }
                     }
                 </div>
@@ -160,6 +314,7 @@
         </div>
     </div>
 </div>
+
 
 @section Scripts
 {

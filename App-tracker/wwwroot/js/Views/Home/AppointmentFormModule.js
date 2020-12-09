@@ -71,7 +71,7 @@
     $addRowBtn.off("click");
     $addRowBtn.on("click", addRow);
 
-    $form.on("click", ".js-del-row-btn", showDelCommentConfirmModal);
+    $form.on("click", ".js-del-row-btn", showConfirmForSavedCommentOrDeleteNonSavedComment);
     $confirmDelCommentBtn.off("click");
     $confirmDelCommentBtn.on("click", confirmDelete);
 
@@ -116,7 +116,7 @@
 
     function confirmDelete() {
         var containerCommentId = $(this).attr("data-id");
-        console.log("api/ContainerComments/5");
+
         $.ajax({
             url: "/api/ContainerComments/" + containerCommentId,
             method: "DELETE"
@@ -139,11 +139,24 @@
             });
     }
 
-    function showDelCommentConfirmModal() {
+    function showConfirmForSavedCommentOrDeleteNonSavedComment() {
         var containerCommentId = $(this).attr("data-id");
-        $confirmDelCommentBtn.attr("data-id", containerCommentId);
+        var containerComment = $(this).val();
 
-        $confirmDelModal.modal("show");
+        if (containerCommentId == 0) {
+            for (var i = 0; i < data.containerComments.length; i++) {
+                if (data.containerComments[i].id == containerCommentId && data.containerComments[i].comment == containerComment) {
+                    data.containerComments.splice(i, 1);
+                    renderComments();
+                    break;
+                }
+            }
+        }
+        else {
+            $confirmDelCommentBtn.attr("data-id", containerCommentId);
+            $confirmDelModal.modal("show");
+        }
+        
     }
     
 
@@ -183,6 +196,7 @@
         }
 
         data.containerComments.push(comment);
+        console.log(data.containerComments);
 
         renderComments();
     }
